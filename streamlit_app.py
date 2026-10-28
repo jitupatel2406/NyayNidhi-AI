@@ -1,4 +1,8 @@
+from qdrant_client import QdrantClient
 
+from app.config import QDRANT_PATH, COLLECTION_NAME
+from app.rag.ingestion import extract_and_split
+from app.rag.vector_store import create_vector_store
 import streamlit as st
 from app.rag.chain import get_rag_chain
 
@@ -26,9 +30,24 @@ st.warning(
     "This tool provides general legal information, not legal advice. "
     "For case-specific guidance, consult a qualified lawyer."
 )
-
 @st.cache_resource
 def load_qa():
+    client = QdrantClient(path=QDRANT_PATH)
+
+    try:
+        collection_exists = client.collection_exists(
+            COLLECTION_NAME
+        )
+    finally:
+        client.close()
+
+    if not collection_exists:
+        with st.spinner(
+            "Preparing the legal database for the first time..."
+        ):
+            chunks = extract_and_split()
+            create_vector_store(chunks)
+
     return get_rag_chain()
 
 answer_question = load_qa()
