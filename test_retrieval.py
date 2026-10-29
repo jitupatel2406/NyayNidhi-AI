@@ -1,16 +1,36 @@
+from qdrant_client import QdrantClient
+from langchain_qdrant import QdrantVectorStore
+from langchain_huggingface import HuggingFaceEmbeddings
 
-from app.rag.chain import get_retriever
+from app.config import QDRANT_PATH, COLLECTION_NAME
 
-retriever = get_retriever()
+embeddings = HuggingFaceEmbeddings(
+    model_name="sentence-transformers/all-MiniLM-L6-v2"
+)
 
-question = "What is the punishment for murder under BNS?"
+client = QdrantClient(path=QDRANT_PATH)
 
-documents = retriever.invoke(question)
+try:
+    vector_store = QdrantVectorStore(
+        client=client,
+        collection_name=COLLECTION_NAME,
+        embedding=embeddings,
+    )
 
-print(f"\nRetrieved {len(documents)} documents.\n")
+    question = "What is the punishment for theft under Section 303 of the Bharatiya Nyaya Sanhita?"
 
-for i, doc in enumerate(documents, start=1):
-    print(f"--- Result {i} ---")
-    print(f"Page: {doc.metadata.get('page', 'Unknown')}")
-    print(doc.page_content[:500])
-    print()
+    documents = vector_store.similarity_search(
+        question,
+        k=10,
+    )
+
+    print(f"\nRetrieved {len(documents)} documents.\n")
+
+    for i, doc in enumerate(documents, start=1):
+        print(f"--- Result {i} ---")
+        print(f"Page: {doc.metadata.get('page', 'Unknown')}")
+        print(doc.page_content[:500])
+        print()
+
+finally:
+    client.close()

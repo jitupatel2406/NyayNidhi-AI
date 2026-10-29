@@ -3,7 +3,8 @@ from app.rag.chain import get_rag_chain
 
 answer_question = get_rag_chain()
 
-question = "What is the punishment for murder by a person already serving life imprisonment under BNS?"
+question = "What is the punishment for theft?"
+
 result = answer_question(question)
 
 print("\n--- NyayNidhi AI Answer ---\n")
